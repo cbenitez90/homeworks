@@ -3,7 +3,7 @@ title: "Modern Data Mining, HW 2"
 author:
 - Group Member Christian Benitez
 - Group Member Taurean Butler
-- Group Member 
+- Group Member NA
 date: 'Due: 11:59 PM,  Sunday, 02/12'
 output:
   pdf_document:
@@ -30,7 +30,7 @@ knitr::opts_chunk$set(echo = FALSE, fig.width=8, fig.height=4)
 options(scipen = 0, digits = 3)  # controls base R output
 # check if you have ISLR package, if not, install it
 if(!require('pacman')) {install.packages('pacman')}
-pacman::p_load(ISLR, tidyverse, data.table, dplyr, tidyselect, skimr, corrplot, ggbiplot) # add the packages needed
+pacman::p_load(ISLR, tidyverse, data.table, dplyr, tidyselect, skimr, corrplot, ggbiplot,factoextra,GGally) # add the packages needed
 ```
 
 
@@ -139,7 +139,7 @@ Load the data. Do a quick EDA to get familiar with the data set. Pay attention t
 > Applying the *which()* function, we find that there are no NA values in this data set, but there does appear to be blank values which have been removed. However, there are errors present,such as the variable HeightFeet05 having a negative value of -4 and the variable Income87 which has a value of -2.
 
 ```{r quick skim of the data}
-temp <- read.csv('data/NLSY79.csv', header = T, stringsAsFactors = F) %>%  filter(HeightFeet05 > 0, Income87 > 0, Job05 != "")
+temp <- read.csv('Homework/HW2/data/NLSY79.csv', header = T, stringsAsFactors = F) %>%  filter(HeightFeet05 > 0, Income87 > 0, Job05 != "")
 
 # missing values? real variables vs. factors? are varable values reasonable?
 str(temp)
@@ -279,6 +279,40 @@ unique(select(temp,tidyselect::vars_select(names(temp), starts_with('Esteem87', 
 5. Apply k-means to cluster subjects on the original esteem scores
 
 ```{r}
+factoextra::fviz_nbclust(data.esteem, kmeans, method = "wss") # a) Find a reasonable number of clusters using within sum of squared with elbow rules.
+
+data.esteem.kmeans_02 <- kmeans(data.esteem, centers = 2)
+
+data.esteem.kmeans_03 <- kmeans(data.esteem, centers = 3)
+
+  
+  #b) Can you summarize common features within each cluster?
+str(data.esteem.kmeans_02)
+
+str(data.esteem.kmeans_03)
+
+data.esteem.kmeans_02$cluster 
+data.esteem.kmeans_03$cluster
+
+
+  data.frame(pc1 = data.esteem.pc$x[, 1], 
+             pc2 = data.esteem.pc$x[, 2],
+             group = as.factor(data.esteem.kmeans_02$cluster)) %>%
+  ggplot(aes(x = pc1, y = pc2, col = group)) +
+  geom_point() +
+  ggtitle("Clustering over PC1 and PC2") 
+  
+     # c) Can you visualize the clusters with somewhat clear boundaries? You may try different pairs of variables and different PC pairs of the esteem scores.
+  
+  data.frame(pc1 = data.esteem.pc$x[, 1], 
+             pc2 = data.esteem.pc$x[, 2],
+             group = as.factor(data.esteem.kmeans_03$cluster)) %>%
+  ggplot(aes(x = pc1, y = pc2, col = group)) +
+  geom_point() +
+  ggtitle("Clustering over PC1 and PC2") 
+
+  
+  
 
 ```
 
@@ -301,12 +335,59 @@ unique(select(temp,tidyselect::vars_select(names(temp), starts_with('Esteem87', 
       - Household environment: Imagazine, Inewspaper, Ilibrary, MotherEd, FatherEd, FamilyIncome78. Do set indicators `Imagazine`, `Inewspaper` and `Ilibrary` as factors. 
     
       - You may use PC1 of ASVAB as level of intelligence
+      
+```{r}
+demographics <- temp %>% select(Subject, Gender, Education05, Income87, Job05, Weight05, HeightFeet05,HeightInch05,Imagazine,Inewspaper,Ilibrary,MotherEd,FatherEd,FamilyIncome78) %>% 
+                        mutate(income_log = log(Income87), height = (HeightInch05 + HeightFeet05*12)*.0254,weight_kg = Weight05*0.4536, bmi = weight_kg/(height^2))
+
+data.asvab.pc <- temp %>% select(Science:Elec) %>% prcomp(center = T, scale. = T) 
+knitr::kable(data.asvab.pc$x[1:5,])
+
+(data.asvab.scores <- data.asvab.pc$x %>% as.data.frame())
+
+ASVAB <- data.asvab.scores$PC1 %>% as.data.frame()
+
+self_esteem <- data.esteem.scores$PC1 %>%  as.data.frame()
+
+esteem <- cbind(demographics,ASVAB, self_esteem)
+
+colnames(esteem)[19] <- "ASVAB"
+colnames(esteem)[20] <- "self_esteem"
+
+esteem$Ilibrary <- as.factor(esteem$Ilibrary)
+esteem$Imagazine <- as.factor(esteem$Imagazine)
+esteem$Inewspaper <- as.factor(esteem$Inewspaper)
+
+names(esteem)
+dim(esteem)
+str(esteem)
+summary(esteem)
+
+skim(esteem)
+```
+      
         
     b)   Run a few regression models between PC1 of all the esteem scores and suitable variables listed in a). Find a final best model with your own criterion. 
 
       - How did you land this model? Run a model diagnosis to see if the linear model assumptions are reasonably met. 
         
       - Write a summary of your findings. In particular, explain what and how the variables in the model affect one's self-esteem. 
+        
+```{r}
+names(esteem)
+
+# Education Metrics
+summary(lm(self_esteem~Education05,data = esteem))
+summary(lm(self_esteem~MotherEd,data = esteem))
+summary(lm(self_esteem~FatherEd,data = esteem))
+summary(lm(self_esteem~ASVAB,data = esteem))
+summary(lm(self_esteem~Ilibrary,data = esteem))
+summary(lm(self_esteem~Inewspaper,data = esteem))
+summary(lm(self_esteem~Imagazine,data = esteem))
+
+summary(lm(self_esteem ~ Education05 + MotherEd + FatherEd + ASVAB + Ilibrary + Inewspaper + Imagazine,data = esteem))
+
+```
         
 
 
@@ -485,6 +566,8 @@ rm(se, b1, upper_ci, lower_ci, x, n_sim, b1, t_star, lse, lse_out)
 i. Summarize the LS estimates of $\boldsymbol{\beta}_1$ (stored in `results$b1`). Does the sampling distribution agree with theory? 
 
 ii.  How many of your 95% confidence intervals capture the true $\boldsymbol{\beta}_1$? Display your confidence intervals graphically. 
+
+
 
 
 
