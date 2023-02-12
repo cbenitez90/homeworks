@@ -983,11 +983,36 @@ ii.  How many of your 95% confidence intervals capture the true $\boldsymbol{\be
 
 
 ```{r}
+capture <- which(!(results$lower_ci <= 1.3 & 1.3 <= results$upper_ci))
 
-results$capture <- ifelse(results$b1 < results$upper_ci & results$b1 > results$lower_ci, 1, 0)
-table(results$capture)
+# initialize the plot
+plot(0, 
+     xlim = c(-.8, 3.2), 
+     ylim = c(1, 100), 
+     ylab = "Sample", 
+     xlab = expression(mu), 
+     main = "Confidence Intervals")
 
+# set up color vector
+colors <- rep(gray(0.6), 100)
+colors[capture] <- "red"
+
+# draw reference line at mu=5
+abline(v = 1.3, lty = 2)
+
+# add horizontal bars representing the CIs
+for(j in 1:100) {
+  
+  lines(c(results$lower_ci[j], results$upper_ci[j]), 
+        c(j, j), 
+        col = colors[j], 
+        lwd = 2)
+  
+}
 ```
+
+5 of our intervals do not capture the regression coefficient. This means 95% of the intervals are captured, which was expected given the 95% confidence interval. 
+
 
 
 
