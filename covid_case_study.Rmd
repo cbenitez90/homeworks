@@ -103,7 +103,68 @@ It is crucial to decide the right granularity for visualization and analysis. We
 
 i) Plot **new** COVID cases in NY, WA and FL by state and by day. Any irregular pattern? What is the biggest problem of using single day data? 
 
+
+When we plot the new cases by day we see these peaks and waves in the cases. We see periods where new cases go up quickly and then they flatline or don't increase. One challenge is that at a daily level it may be hard to tell if an increase of a few new cases signals a new wave in Covid. For instance if you were to track from day to day 1 or 2 more everyday may not signal anything of alarm. Also when you isually plot the data it's just generally difficult to see the time frames of how the virus is spreading.
+
+```{r}
+summary(covid_rate)
+summary(county_data)
+```
+
+
+```{r}
+daily_covid <- aggregate(cum_cases ~ State + date, data = covid_rate, FUN = sum, na.rm = TRUE)
+daily_covid <-daily_covid %>%
+      group_by(State) %>%
+      arrange(date, .by_group = TRUE) %>%
+      mutate(new_cases = cum_cases - lag(cum_cases, default = first(cum_cases)))
+         
+daily_covid
+```
+
+
+
+```{r}
+daily_covid %>%
+  filter(State == c("New York","Washington","Florida"), na.rm = TRUE) %>%
+  ggplot(aes(x = date , y = new_cases, color = State)) +
+    geom_point()
+
+
+
+```
+
+```{r}
+daily_covid %>%
+  filter(State == c("New York","Washington","Florida"), na.rm = TRUE) %>%
+  ggplot(aes(x = date , y = cum_cases, color = State)) +
+    geom_point()
+
+
+
+```
+
+
+
 ii) Create **weekly new** cases per 100k `weekly_case_per100k`. Plot the spaghetti plots of `weekly_case_per100k` by state. Use `TotalPopEst2019` as population.
+
+```{r}
+daily_covid$week_index <- c(0, rep(1:(nrow(daily_covid)-1)%/%7))
+
+weekly_covid <-daily_covid %>%
+  	group_by(week_index, State) %>%
+  	summarise(weekly_cases = sum(new_cases))
+
+```
+
+```{r}
+weekly_covid %>%
+    filter(State == "New York" | State == "Washington" | State == "Florida") %>%
+    ggplot(aes(x = week_index , y = weekly_cases, color = State)) +
+    geom_point()
+
+```
+
 
 iii) Summarize the COVID case trend among states based on the plot in ii). What could be the possible reasons to explain the variabilities? 
 
