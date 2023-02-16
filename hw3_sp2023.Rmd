@@ -88,13 +88,15 @@ Get familiar with this dataset first. Tip: you can use the command `?ISLR::Auto`
 Explore the data, with particular focus on pairwise plots and summary statistics. Briefly summarize your findings and any peculiarities in the data.
 
 ```{r}
-head(Auto)
-names(Auto)
-str(Auto)
-dim(Auto)
-skimr::skim(Auto)
+Auto2
+head(Auto2)
+names(Auto2)
+str(Auto2)
+dim(Auto2)
+skimr::skim(Auto2)
 
-GGally::ggpairs(Auto[,-9])
+GGally::ggpairs(Auto2[,-9])
+
 ```
 
 
@@ -105,7 +107,7 @@ a) Start with a simple regression of `mpg` vs. `year` and report R's `summary` o
 > Comparing mpg and year, we find that year is a significant predictor on mpg according to this model with the p value being <2e-16 ***. According to the estimate of  1.2300, we see that with each incremental increase of year mpg increases by 1.23. 
 
 ```{r}
-summary(time_vs_mpg <- lm(mpg ~ year, data = Auto))
+summary(time_vs_mpg <- lm(mpg ~ year, data = Auto2))
 ```
 
 
@@ -114,7 +116,7 @@ b) Add `horsepower` on top of the variable `year` to your linear model. Is `year
 > 
 
 ```{r}
-summary(horsepower_time_vs_mpg <- lm(mpg ~ year + horsepower, data = Auto))
+summary(horsepower_time_vs_mpg <- lm(mpg ~ year + horsepower, data = Auto2))
 ```
 
 
@@ -133,7 +135,7 @@ d) Create a model with interaction by fitting `lm(mpg ~ year * horsepower)`. Is 
 > An interaction effect offurs when a the effect of one variable on an outcome variable depends on the level of another variable. In this case, we find that year and horsepower have a significant interaction effect, indicating that the effect of year on mpg is stronger for vehicles with less horsepower. This is most likely due to horsepower having higher fuel consumption and thus negatively effects mpg. When looking at year, the later models of cars have better fuel efficiency. Therefore, cars that are newer and have less horsepower have higher mpg, whereas cars that are older and more horsepower have less mpf. 
 
 ```{r}
-summary(horsepower_x_time_vs_mpg <- lm(mpg ~ year * horsepower, data =  Auto))
+summary(horsepower_x_time_vs_mpg <- lm(mpg ~ year * horsepower, data =  Auto2))
 
 anova(horsepower_time_vs_mpg, horsepower_x_time_vs_mpg)
 ```
@@ -148,9 +150,9 @@ a) Fit a model that treats `cylinders` as a continuous/numeric variable. Is `cyl
 > Given that larger number of cylinders lowers mpg, we expect to see a negative relationship between mpg and cylinders. When adding this to the model, this is exactly what we find. The p value is 5.0e-13 ***, signifying this is a significant relationship and the coefficient is -1.5420. The coefficient indicates that when cylinder increases by a value of 1, mpg decreases by 1.5420. 
 
 ```{r}
-Auto$cylinders <- as.numeric(Auto$cylinders)
+Auto2$cylinders <- as.numeric(Auto2$cylinders)
 
-Auto.continuous_cylinders <- Auto
+Auto.continuous_cylinders <- Auto2
 
 summary(cylinders.cont_horsepower_x_time_vs_mpg <- lm(mpg ~ year*horsepower + cylinders, data = Auto.continuous_cylinders))
 ```
@@ -161,8 +163,8 @@ b) Fit a model that treats `cylinders` as a categorical/factor. Is `cylinders` s
 > By treating culinders as a factor, we find that the only significant effect is between vehicles that have 4 cylinders (p = 0.0044 **). Neither 5,6,8 are not significantly related to mpg. We also find an interesting effect with 4 cylinders and mpg where there is a positive relationship. This suggesting that vehicles with 4 cylinders have a positive effect on mpg. Given that higher cylinders means lower mpg, this makes sense considering that 4 cylinders is the smallest a vehicle in this dataset can have.
 
 ```{r}
-Auto$cylinders <- as.factor(Auto$cylinders)
-Auto.categorical_cylinders <- Auto
+Auto2$cylinders <- as.factor(Auto2$cylinders)
+Auto.categorical_cylinders <- Auto2
 
 summary(cylinders.fact_horsepower_x_time_vs_mpg <- lm(mpg ~ year*horsepower + cylinders, data = Auto.categorical_cylinders))
 ```
@@ -189,15 +191,155 @@ Final modeling question: we want to explore the effects of each feature as best 
   
 a) Describe the final model. Include diagnostic plots with particular focus on the model residuals and diagnoses.
 
+> To explore the effects of each car feature on mpg, we decided to look at mpg's association with all variables. Before we start our analysis, however, let's clean up our data. First, we used the function ggpairs to look at each association individually (this is shown above). We noticed that horsepower looks exponential. So, we decided to apply some function transformations. We looked at log and taking the inverse of it. Log didn't help, but the inverse did. So we decided to make a new variable called horsepower_new. Next, we looked at a description of our variables to see if they are coded properly. From the previous problem, we decided to keep cylinders as a factor since cylinders isn't quite a continous variable (cylinders_new). Additionally, we decided to apply a factor on origin. Origin represents the location of origin of the car model. 1 means its from America. 2 means its from Europe. 3 means its from Asia. We then analyzed a model with all variables considered and plotted all relationships grouped by cylinders and car origin. Here's what we found: 
+
+- Displacement is not associated with mpg when considering all other variables
+
+- Graphically, the number of cylinders affects mpg along with the relationship with other variables
+
+- Generally, asian cars seem to have better mpg
+
+
 ```{r}
+plot(Auto$horsepower, Auto$mpg) # relationship looks non linear
+
+plot(log(Auto$horsepower), Auto$mpg)
+
+plot(1/Auto$horsepower, Auto$mpg)
+
+Auto_new <- Auto %>% mutate(cylinders_new = as.factor(cylinders), horsepower_new = 1/horsepower, origin_new = as.factor(origin))
+
+Auto.data <-  Auto_new %>% select(-horsepower, - cylinders, -name, -origin)
+
+
+Auto.model <- lm(mpg~., Auto.data)
+
+summary(Auto.model)
+
+Anova(Auto.model)
+
+
+## Car Cylinders 
+ggplot(data = Auto.data, (aes(x = weight , y = mpg, col = cylinders_new))) +
+    geom_point()+
+    geom_smooth(method = "lm", se = F) +
+                theme_bw()
+
+ggplot(data = Auto.data, (aes(x = acceleration, y = mpg, col = cylinders_new))) +
+    geom_point()+
+    geom_smooth(method = "lm", se = F) +
+                theme_bw()
+
+ggplot(data = Auto.data, (aes(x = year, y = mpg, col = cylinders_new))) +
+    geom_point()+
+    geom_smooth(method = "lm", se = F) +
+                theme_bw()
+
+ggplot(data = Auto.data, (aes(x = origin_new, y = mpg, col = cylinders_new))) +
+    geom_point()+
+    geom_smooth(method = "lm", se = F) +
+                theme_bw()
+
+
+ggplot(data = Auto.data, (aes(x = horsepower_new, y = mpg, col = cylinders_new))) +
+    geom_point()+
+    geom_smooth(method = "lm", se = F) +
+                theme_bw()
+
+## Car Origin
+
+ggplot(data = Auto.data, (aes(x = weight , y = mpg, col = origin_new))) +
+    geom_point()+
+    geom_smooth(method = "lm", se = F) +
+                theme_bw()
+
+ggplot(data = Auto.data, (aes(x = acceleration, y = mpg, col = origin_new))) +
+    geom_point()+
+    geom_smooth(method = "lm", se = F) +
+                theme_bw()
+
+ggplot(data = Auto.data, (aes(x = year, y = mpg, col = origin_new))) +
+    geom_point()+
+    geom_smooth(method = "lm", se = F) +
+                theme_bw()
+
+
+ggplot(data = Auto.data, (aes(x = horsepower_new, y = mpg, col = origin_new))) +
+    geom_point()+
+    geom_smooth(method = "lm", se = F) +
+                theme_bw()
 
 ```
 
 
 b) Summarize the effects found.
 
+> In accordance with our previous findings, we removed displacement in our final model. Below, are our findings. A note to make about our results, we also tried different iterations of the origin factor to see how car models differ from each other. Here's what we found:
+
+- All cylinder factors is possitively correlated when controlling for all other variables. 
+
+- Comparing all car origin models, we find that European and American cars are negatively associated with mpg while Japanese cars are positively correlated with mpg.
+
+- Inversing the horsepower variable was significantly and positively associated with mpg
+
+- Year was significantly and positively associated with mpg
+
+- Weight was significantly and negatively associated with mpg
+
+- Acceleration was significantly and negatively associated with mpg
+
+- f-statistic is 248 on 10 and 381 DF,  p-value: <2e-16
+
+- RSE is 2.88 on 381 degrees of freedom
+
+- Multiple R-squared is 0.867,
+
+```{r}
+## Final Model
+Auto.data2 <- Auto.data %>% select(-displacement)
+summary(Auto.model.revised <- lm(mpg~., Auto.data2))
+
+Auto.data3 <- Auto %>% mutate(cylinders_new = as.factor(cylinders), horsepower_new = 1/horsepower, origin_new = factor(origin, c(2,1,3))) %>% select(-horsepower, - cylinders, -name, -origin, - displacement)
+
+summary(Auto.model.revised2 <- lm(mpg~., Auto.data3))
+
+Auto.data4 <- Auto %>% mutate(cylinders_new = as.factor(cylinders), horsepower_new = 1/horsepower, origin_new = factor(origin, c(3,1,2))) %>% select(-horsepower, - cylinders, -name, -origin, - displacement)
+
+summary(Auto.model.revised3 <- lm(mpg~., Auto.data4))
+
+```
+
+
+
+
+
 c) Predict the `mpg` of the following car: A red car built in the US in 1983 that is 180 inches long, has eight cylinders, displaces 350 cu. inches, weighs 4000 pounds, and has a horsepower of 260. Also give a 95% CI for your prediction.
 
+
+
+```{r}
+newcar = Auto.data2[1, ]
+newcar[1] = ""
+newcar[2] = 4000
+newcar[3] = ""
+newcar[4] = 1983
+newcar[5] = 8
+newcar[6] = 1/260
+newcar[7] = 1
+
+Auto.model.revised3$coefficients
+
+mpg_newcar = -0.00296 * 4000 + 0.70009 *83 +  5.90870 +  915.85491* (1/260) + -2.10256 + -30.74449 
+
+confint(Auto.model.revised3)
+
+mpg_newcar_lowerbound = -0.00401 * 4000 +  0.61344 *83 +  2.63393 +  700.44708* (1/260) + -3.01824 + -36.91531 
+
+mpg_newcar_upperbound = -1.91e-03 * 4000 + 7.87e-01 *83 +  9.18e+00 +  1.13e+03* (1/260) + -3.01824 + -2.21e+01 
+
+(newcar_stat = data.frame(mpg_newcar_lowerbound, mpg_newcar, mpg_newcar_upperbound))
+
+```
 
 
 # Case study 1:  `ISLR::Auto` data
