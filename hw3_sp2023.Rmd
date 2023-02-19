@@ -31,7 +31,7 @@ knitr::opts_chunk$set(echo = T, fig.width=8, fig.height=4)
 options(scipen = 0, digits = 3)  # controls base R output
 # check if you have ISLR package, if not, install it
 if(!require('pacman')) {install.packages('pacman')}
-pacman::p_load(ISLR, readxl, magrittr, dplyr, ggplot2,GGally, stargazer,car) # add the packages needed
+pacman::p_load(ISLR, readxl, magrittr, dplyr, ggplot2,GGally, stargazer,car, leaps) # add the packages needed
 ```
 
 
@@ -319,11 +319,11 @@ b) Summarize the effects found.
 Auto.data2 <- Auto.data %>% select(-displacement)
 summary(Auto.model.revised <- lm(mpg~., Auto.data2))
 
-Auto.data3 <- Auto %>% mutate(cylinders_new = as.factor(cylinders), horsepower_new = 1/horsepower, origin_new = factor(origin, c(2,1,3))) %>% select(-horsepower, - cylinders, -name, -origin, - displacement)
+Auto.data3 <-ISLR::Auto %>% mutate(cylinders_new = as.factor(cylinders), horsepower_new = 1/horsepower, origin_new = factor(origin, c(2,1,3))) %>% select(-horsepower, - cylinders, -name, -origin, - displacement)
 
 summary(Auto.model.revised2 <- lm(mpg~., Auto.data3))
 
-Auto.data4 <- Auto %>% mutate(cylinders_new = as.factor(cylinders), horsepower_new = 1/horsepower, origin_new = factor(origin, c(3,1,2))) %>% select(-horsepower, - cylinders, -name, -origin, - displacement)
+Auto.data4 <- ISLR::Auto %>% mutate(cylinders_new = as.factor(cylinders), horsepower_new = 1/horsepower, origin_new = factor(origin, c(3,1,2))) %>% select(-horsepower, - cylinders, -name, -origin, - displacement)
 
 summary(Auto.model.revised3 <- lm(mpg~., Auto.data4))
 
@@ -338,14 +338,16 @@ c) Predict the `mpg` of the following car: A red car built in the US in 1983 tha
 
 
 ```{r}
-newcar = Auto.data2[1, ]
+newcar = Auto.data4[1, ]
 newcar[1] = NA
 newcar[2] = 4000
 newcar[3] = NA
 newcar[4] = 1983
 newcar[5] = 8
+newcar[5] = as.factor(newcar[5])
 newcar[6] = 1/260
 newcar[7] = 1
+newcar[7] = as.factor(newcar[7])
 
 Auto.model.revised3$coefficients
 
@@ -358,9 +360,6 @@ mpg_newcar_lowerbound = -0.00401 * 4000 +  0.61344 *83 +  2.63393 +  700.44708* 
 mpg_newcar_upperbound = -1.91e-03 * 4000 + 7.87e-01 *83 +  9.18e+00 +  1.13e+03* (1/260) + -3.01824 + -2.21e+01 
 
 (newcar_stat = data.frame(mpg_newcar_lowerbound, mpg_newcar, mpg_newcar_upperbound))
-
-predict(Auto.model.revised3,newcar)
-
 ```
 
 
@@ -460,20 +459,196 @@ car::Anova(Auto.gpm)
 
 b) You may also explore by adding interactions and higher order terms. The model(s) should be as *parsimonious* (simple) as possible, unless the gain in accuracy is significant from your point of view. 
 
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lcc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{2}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-3} 
+\\[-1.8ex] & \multicolumn{2}{c}{gpm} \\ 
+\\[-1.8ex] & (1) & (2)\\ 
+\hline \\[-1.8ex] 
+ cylinders & 0.002$^{***}$ & 0.001 \\ 
+  & (0.001) & (0.001) \\ 
+  & & \\ 
+ displacement & $-$0.00003$^{**}$ & 0.00001 \\ 
+  & (0.00001) & (0.00001) \\ 
+  & & \\ 
+ horsepower & 0.0001$^{***}$ & $-$0.0001$^{*}$ \\ 
+  & (0.00002) & (0.00004) \\ 
+  & & \\ 
+ weight & 0.00001$^{***}$ & 0.00001$^{***}$ \\ 
+  & (0.00000) & (0.00000) \\ 
+  & & \\ 
+ acceleration & 0.0003$^{**}$ & $-$0.001$^{***}$ \\ 
+  & (0.0002) & (0.0003) \\ 
+  & & \\ 
+ year & $-$0.001$^{***}$ & $-$0.002$^{***}$ \\ 
+  & (0.0001) & (0.0002) \\ 
+  & & \\ 
+ origin & $-$0.001$^{**}$ & $-$0.021$^{***}$ \\ 
+  & (0.0005) & (0.008) \\ 
+  & & \\ 
+ acceleration:horsepower &  & 0.00002$^{***}$ \\ 
+  &  & (0.00000) \\ 
+  & & \\ 
+ year:origin &  & 0.0003$^{***}$ \\ 
+  &  & (0.0001) \\ 
+  & & \\ 
+ Constant & 0.091$^{***}$ & 0.147$^{***}$ \\ 
+  & (0.008) & (0.016) \\ 
+  & & \\ 
+\hline \\[-1.8ex] 
+Observations & 392 & 392 \\ 
+R$^{2}$ & 0.885 & 0.895 \\ 
+Adjusted R$^{2}$ & 0.883 & 0.892 \\ 
+Residual Std. Error & 0.006 (df = 384) & 0.005 (df = 382) \\ 
+F Statistic & 423.000$^{***}$ (df = 7; 384) & 361.000$^{***}$ (df = 9; 382) \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{2}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 
+
 ```{r}
-#GGally::ggpairs(Auto)
-summary(lm(gpm ~ cylinders*displacement + acceleration*horsepower + weight*horsepower +weight*horsepower + year + origin, data = Auto[,2:9]))
+## Creating a Model where there's an interaction term between acceleration and horsepower
+
+summary(Auto.interaction_model.01 <-lm(gpm ~ cylinders + displacement + acceleration*horsepower + weight + year + origin, data = Auto[,2:9]))
+
+## Our model appears to show sigificant difference between our models and that there may be an interaction between these two terms
+anova(Auto.gpm,Auto.interaction_model.01)
+
+## Let's try improving the model and adding more interactions weight and acceleration are not related
+#summary(Auto.interaction_model.02 <-lm(gpm ~ cylinders + displacement + acceleration*horsepower + weight*acceleration + year + origin, data = Auto[,2:9]))
+
+## Let's try improving the model and an interaction between year and origin
+summary(Auto.interaction_model.03 <-lm(gpm ~ cylinders + displacement + acceleration*horsepower + weight + year*origin, data = Auto[,2:9]))
+
+anova(Auto.interaction_model.03,Auto.interaction_model.01)
+
+## Let's try removing some variables that aren't significant
+summary(Auto.interaction_model.04 <-lm(gpm ~ acceleration*horsepower + weight + year*origin, data = Auto[,2:9]))
+
+anova(Auto.interaction_model.04,Auto.interaction_model.03)
+
+#stargazer(Auto.gpm,Auto.interaction_model.03)
 
 ```
 
 
 c) Use Mallow's $C_p$ or BIC to select the model.
 
+```{r}
+Auto.fit.with.interaction <- regsubsets(gpm ~ cylinders + displacement + acceleration*horsepower + weight + year*origin, Auto[,2:9] , nvmax = 25, method="exhaustive")
+A.I.<-summary(Auto.fit.with.interaction)
+
+Auto.fit.with.no.interaction <- regsubsets(gpm ~., Auto[,2:9] , nvmax = 25, method="exhaustive")
+A.NI <- summary(Auto.fit.with.no.interaction)
+
+
+plot(A.I.$cp, xlab="Number of predictors",
+ylab="Cp", main = "Auto with Interaction", col="red", pch=16, cex =3)
+
+plot(A.NI$cp, xlab="Number of predictors",
+ylab="Cp", main = "Auto without Interaction",col="red", pch=16, cex =3)
+
+
+par(mfrow=c(1, 3)) # see diff criteria
+plot(A.I.$cp, xlab="Number of predictors",
+ylab="Cp", col="red", pch=16, cex=2)
+plot(A.I.$rsq, xlab="Rˆ2", pch=15, col= "blue", cex=2)
+plot(A.I.$rss, xlab="RSS", pch = 14, col="green", cex=2)
+par(mfrow=c(1,1))
+
+par(mfrow=c(1, 3)) # see diff criteria
+plot(A.NI$cp, xlab="Number of predictors",
+ylab="Cp", col="red", pch=16, cex=2)
+plot(A.NI$rsq, xlab="Rˆ2", pch=15, col= "blue", cex=2)
+plot(A.NI$rss, xlab="RSS", pch = 14, col="green", cex=2)
+par(mfrow=c(1,1))
+
+
+coef(Auto.fit.with.interaction,9)
+
+coef(Auto.fit.with.no.interaction,7)
+
+opt.size_intercation <- which.min(A.I.$cp)
+opt.size_no_intercation <- which.min(A.NI$cp)
+
+A.I.var <- A.I.$which # logic indicators which variables are in
+A.I.var[opt.size_intercation,]
+
+A.NI.var <- A.NI$which # logic indicators which variables are in
+A.NI.var[opt.size_no_intercation,]
+
+colnames(A.I.var)[A.I.var[opt.size_intercation,]]
+colnames(A.NI.var)[A.NI.var[opt.size_no_intercation,]]
+
+```
+
+
 2) Describe the final model and its accuracy. Include diagnostic plots with particular focus on the model residuals.
 
+```{r}
+summary(Auto.final <-lm(gpm ~ cylinders + acceleration*horsepower + weight + year*origin, data = Auto[,2:9]))
+par(mfrow=c(1,2))
+plot(Auto.final, 1, cex =3) # max(fit.final$res) = 3;
+plot(Auto.final, 2)
+```
+
+
   * Summarize the effects found.
+  
+  > In Part 1.B We explored different interaction terms and observed that our third model appears to show that there are interaction effects between origin and year & acceleration and horsepower. Following this, we attempted to reduce the model since there are a total of 9 variables. To reduce our model, we applied Mallow's $C_p$ to help us select the best model. When taking our model with interaction effects, we found that 8 variables is appropriate for our model. More specifically, we found that the variable displacement can be removed from our final model. Thus, we are using every variable except displacement in our model. Afterwards, we then applied diagnostic plots. Linearity/Homoscedasticity seems to be fine here; however, normality may be a concern
+  
   * Predict the `mpg` of a car that is: built in 1983, in the US, red, 180 inches long, 8 cylinders, 350 displacement, 260 as horsepower, and weighs 4,000 pounds. Give a 95% CI.
+  
+  
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}} cccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & newcar_mpg & upr & lwr \\ 
+\hline \\[-1.8ex] 
+1 & $37$ & $68.1$ & $25.4$ \\ 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table} 
+  
+```{r}
+newcar = Auto[1, ]
+newcar[1] = NA
+newcar[2] = 8
+newcar[3] = 350
+newcar[4] = 260
+newcar[5] = 4000
+newcar[6] = 0
+newcar[7] = 83
+newcar[8] = 1
+newcar[9] = NA
+newcar[9] <-predict(Auto.final,newcar)
+newcar[1] <- 1/newcar[9] 
+
+newcar
+
+newcar_confidence_intervals_gpm <- predict(Auto.final,newcar, interval="confidence", se.fit=TRUE)
+
+newcar_confidence_intervals_mpg <- predict(Auto.final,newcar, interval="confidence", se.fit=TRUE)
+
+newcar_confidence_intervals_mpg$fit <- 1/newcar_confidence_intervals_gpm$fit # Upper and Lower Need to be swapped
+
+
+
+```
+  
+  
   * Any suggestions as to how to improve the quality of the study?
+  
+  > This study offers a great introduction into multiple linear regressions by showing how varying aspects of a car influence the mileage per gallon. However, there are limitations to this study that could be improved for the future. To start, these cars are from the 1970 - 1982. Cars have changed drastically since then, such as the existance of smart vehicles or new technical improvements (for example, average car horsepower in America is currently 200-250, whereas in this dataset it is 105). Therefore, having a new round of data collection can help us better entangle whether these variables are still important for modern cars. Another addition for this study, could be keeping track of whether a car is an electric car or not. Electric cars have better acceleration and mileage. If we make this modification, then we would also need to collect MPGe which is the mpg equivalent to electric cars. Another change we can make for this study is a comparison of different car companies. There is a list of vehicle names listed under the name variable, however, it would be helpful to just have a variable of what company this car is from. From our analysis, we found that Asian cars were more efficient, but what if this is largely explained by a specific group of car companies that may specialize in more efficient cars. 
 
 
 # Case study 2: COVID19
