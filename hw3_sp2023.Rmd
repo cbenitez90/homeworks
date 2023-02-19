@@ -10,6 +10,7 @@ output:
     number_sections: yes
     toc: yes
     toc_depth: '4'
+    latex_engine: xelatex
   html_document:
     code_folding: hide
     highlight: haddock
@@ -30,7 +31,7 @@ knitr::opts_chunk$set(echo = T, fig.width=8, fig.height=4)
 options(scipen = 0, digits = 3)  # controls base R output
 # check if you have ISLR package, if not, install it
 if(!require('pacman')) {install.packages('pacman')}
-pacman::p_load(ISLR, readxl, magrittr, dplyr, ggplot2,GGally) # add the packages needed
+pacman::p_load(ISLR, readxl, magrittr, dplyr, ggplot2,GGally, stargazer,car) # add the packages needed
 ```
 
 
@@ -87,15 +88,34 @@ Get familiar with this dataset first. Tip: you can use the command `?ISLR::Auto`
 ### EDA
 Explore the data, with particular focus on pairwise plots and summary statistics. Briefly summarize your findings and any peculiarities in the data.
 
-```{r}
-Auto2
-head(Auto2)
-names(Auto2)
-str(Auto2)
-dim(Auto2)
-skimr::skim(Auto2)
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+Statistic & \multicolumn{1}{c}{N} & \multicolumn{1}{c}{Mean} & \multicolumn{1}{c}{St. Dev.} & \multicolumn{1}{c}{Min} & \multicolumn{1}{c}{Max} \\ 
+\hline \\[-1.8ex] 
+mpg & 392 & 23.400 & 7.800 & 9.000 & 46.600 \\ 
+cylinders & 392 & 5.470 & 1.710 & 3 & 8 \\ 
+displacement & 392 & 194.000 & 105.000 & 68.000 & 455.000 \\ 
+horsepower & 392 & 104.000 & 38.500 & 46 & 230 \\ 
+weight & 392 & 2,978.000 & 849.000 & 1,613 & 5,140 \\ 
+acceleration & 392 & 15.500 & 2.760 & 8.000 & 24.800 \\ 
+year & 392 & 76.000 & 3.680 & 70 & 82 \\ 
+origin & 392 & 1.580 & 0.806 & 1 & 3 \\ 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table} 
 
-GGally::ggpairs(Auto2[,-9])
+```{r}
+head(Auto)
+names(Auto)
+str(Auto)
+dim(Auto)
+skimr::skim(Auto)
+
+GGally::ggpairs(Auto[,-9])
 
 ```
 
@@ -107,7 +127,7 @@ a) Start with a simple regression of `mpg` vs. `year` and report R's `summary` o
 > Comparing mpg and year, we find that year is a significant predictor on mpg according to this model with the p value being <2e-16 ***. According to the estimate of  1.2300, we see that with each incremental increase of year mpg increases by 1.23. 
 
 ```{r}
-summary(time_vs_mpg <- lm(mpg ~ year, data = Auto2))
+summary(time_vs_mpg <- lm(mpg ~ year, data = Auto))
 ```
 
 
@@ -116,7 +136,7 @@ b) Add `horsepower` on top of the variable `year` to your linear model. Is `year
 > 
 
 ```{r}
-summary(horsepower_time_vs_mpg <- lm(mpg ~ year + horsepower, data = Auto2))
+summary(horsepower_time_vs_mpg <- lm(mpg ~ year + horsepower, data = Auto))
 ```
 
 
@@ -135,7 +155,7 @@ d) Create a model with interaction by fitting `lm(mpg ~ year * horsepower)`. Is 
 > An interaction effect offurs when a the effect of one variable on an outcome variable depends on the level of another variable. In this case, we find that year and horsepower have a significant interaction effect, indicating that the effect of year on mpg is stronger for vehicles with less horsepower. This is most likely due to horsepower having higher fuel consumption and thus negatively effects mpg. When looking at year, the later models of cars have better fuel efficiency. Therefore, cars that are newer and have less horsepower have higher mpg, whereas cars that are older and more horsepower have less mpf. 
 
 ```{r}
-summary(horsepower_x_time_vs_mpg <- lm(mpg ~ year * horsepower, data =  Auto2))
+summary(horsepower_x_time_vs_mpg <- lm(mpg ~ year * horsepower, data =  Auto))
 
 anova(horsepower_time_vs_mpg, horsepower_x_time_vs_mpg)
 ```
@@ -150,9 +170,9 @@ a) Fit a model that treats `cylinders` as a continuous/numeric variable. Is `cyl
 > Given that larger number of cylinders lowers mpg, we expect to see a negative relationship between mpg and cylinders. When adding this to the model, this is exactly what we find. The p value is 5.0e-13 ***, signifying this is a significant relationship and the coefficient is -1.5420. The coefficient indicates that when cylinder increases by a value of 1, mpg decreases by 1.5420. 
 
 ```{r}
-Auto2$cylinders <- as.numeric(Auto2$cylinders)
+Auto$cylinders <- as.numeric(Auto$cylinders)
 
-Auto.continuous_cylinders <- Auto2
+Auto.continuous_cylinders <- Auto
 
 summary(cylinders.cont_horsepower_x_time_vs_mpg <- lm(mpg ~ year*horsepower + cylinders, data = Auto.continuous_cylinders))
 ```
@@ -163,8 +183,8 @@ b) Fit a model that treats `cylinders` as a categorical/factor. Is `cylinders` s
 > By treating culinders as a factor, we find that the only significant effect is between vehicles that have 4 cylinders (p = 0.0044 **). Neither 5,6,8 are not significantly related to mpg. We also find an interesting effect with 4 cylinders and mpg where there is a positive relationship. This suggesting that vehicles with 4 cylinders have a positive effect on mpg. Given that higher cylinders means lower mpg, this makes sense considering that 4 cylinders is the smallest a vehicle in this dataset can have.
 
 ```{r}
-Auto2$cylinders <- as.factor(Auto2$cylinders)
-Auto.categorical_cylinders <- Auto2
+Auto$cylinders <- as.factor(Auto$cylinders)
+Auto.categorical_cylinders <- Auto
 
 summary(cylinders.fact_horsepower_x_time_vs_mpg <- lm(mpg ~ year*horsepower + cylinders, data = Auto.categorical_cylinders))
 ```
@@ -207,7 +227,7 @@ plot(log(Auto$horsepower), Auto$mpg)
 
 plot(1/Auto$horsepower, Auto$mpg)
 
-Auto_new <- Auto %>% mutate(cylinders_new = as.factor(cylinders), horsepower_new = 1/horsepower, origin_new = as.factor(origin))
+Auto_new <- ISLR::Auto %>% mutate(cylinders_new = as.factor(cylinders), horsepower_new = 1/horsepower, origin_new = as.factor(origin))
 
 Auto.data <-  Auto_new %>% select(-horsepower, - cylinders, -name, -origin)
 
@@ -319,9 +339,9 @@ c) Predict the `mpg` of the following car: A red car built in the US in 1983 tha
 
 ```{r}
 newcar = Auto.data2[1, ]
-newcar[1] = ""
+newcar[1] = NA
 newcar[2] = 4000
-newcar[3] = ""
+newcar[3] = NA
 newcar[4] = 1983
 newcar[5] = 8
 newcar[6] = 1/260
@@ -339,6 +359,8 @@ mpg_newcar_upperbound = -1.91e-03 * 4000 + 7.87e-01 *83 +  9.18e+00 +  1.13e+03*
 
 (newcar_stat = data.frame(mpg_newcar_lowerbound, mpg_newcar, mpg_newcar_upperbound))
 
+predict(Auto.model.revised3,newcar)
+
 ```
 
 
@@ -354,12 +376,96 @@ a) You may explore the possibility of variable transformations. We normally do n
 
 In addition, can you provide some background knowledge to support the notion: it makes more sense to model `GPM`?  
 
-```{r}
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+Statistic & \multicolumn{1}{c}{N} & \multicolumn{1}{c}{Mean} & \multicolumn{1}{c}{St. Dev.} & \multicolumn{1}{c}{Min} & \multicolumn{1}{c}{Max} \\ 
+\hline \\[-1.8ex] 
+mpg & 392 & 23.400 & 7.800 & 9.000 & 46.600 \\ 
+cylinders & 392 & 5.470 & 1.710 & 3 & 8 \\ 
+displacement & 392 & 194.000 & 105.000 & 68.000 & 455.000 \\ 
+horsepower & 392 & 104.000 & 38.500 & 46 & 230 \\ 
+weight & 392 & 2,978.000 & 849.000 & 1,613 & 5,140 \\ 
+acceleration & 392 & 15.500 & 2.760 & 8.000 & 24.800 \\ 
+year & 392 & 76.000 & 3.680 & 70 & 82 \\ 
+origin & 392 & 1.580 & 0.806 & 1 & 3 \\ 
+gpm & 392 & 0.048 & 0.017 & 0.021 & 0.111 \\ 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table} 
 
+
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lcc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{2}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-3} 
+\\[-1.8ex] & mpg & gpm \\ 
+\\[-1.8ex] & (1) & (2)\\ 
+\hline \\[-1.8ex] 
+ cylinders & $-$0.493 & 0.002$^{***}$ \\ 
+  & (0.323) & (0.001) \\ 
+  & & \\ 
+ displacement & 0.020$^{***}$ & $-$0.00003$^{**}$ \\ 
+  & (0.008) & (0.00001) \\ 
+  & & \\ 
+ horsepower & $-$0.017 & 0.0001$^{***}$ \\ 
+  & (0.014) & (0.00002) \\ 
+  & & \\ 
+ weight & $-$0.006$^{***}$ & 0.00001$^{***}$ \\ 
+  & (0.001) & (0.00000) \\ 
+  & & \\ 
+ acceleration & 0.081 & 0.0003$^{**}$ \\ 
+  & (0.099) & (0.0002) \\ 
+  & & \\ 
+ year & 0.751$^{***}$ & $-$0.001$^{***}$ \\ 
+  & (0.051) & (0.0001) \\ 
+  & & \\ 
+ origin & 1.430$^{***}$ & $-$0.001$^{**}$ \\ 
+  & (0.278) & (0.0005) \\ 
+  & & \\ 
+ Constant & $-$17.200$^{***}$ & 0.091$^{***}$ \\ 
+  & (4.640) & (0.008) \\ 
+  & & \\ 
+\hline \\[-1.8ex] 
+Observations & 392 & 392 \\ 
+R$^{2}$ & 0.821 & 0.885 \\ 
+Adjusted R$^{2}$ & 0.818 & 0.883 \\ 
+Residual Std. Error (df = 384) & 3.330 & 0.006 \\ 
+F Statistic (df = 7; 384) & 252.000$^{***}$ & 423.000$^{***}$ \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{2}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 
+
+```{r}
+Auto <- ISLR::Auto %>% mutate(gpm = 1/mpg) %>% select(-name)
+
+Auto.mpg <- lm(mpg ~ ., data = Auto[,1:8])
+
+Auto.gpm <- lm(gpm ~ ., data = Auto[,2:9])
+
+car::Anova(Auto.mpg)
+
+car::Anova(Auto.gpm)
 ```
 
 
 b) You may also explore by adding interactions and higher order terms. The model(s) should be as *parsimonious* (simple) as possible, unless the gain in accuracy is significant from your point of view. 
+
+```{r}
+#GGally::ggpairs(Auto)
+summary(lm(gpm ~ cylinders*displacement + acceleration*horsepower + weight*horsepower +weight*horsepower + year + origin, data = Auto[,2:9]))
+
+```
+
 
 c) Use Mallow's $C_p$ or BIC to select the model.
 
