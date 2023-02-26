@@ -88,6 +88,8 @@ Get familiar with this dataset first. Tip: you can use the command `?ISLR::Auto`
 ### EDA
 Explore the data, with particular focus on pairwise plots and summary statistics. Briefly summarize your findings and any peculiarities in the data.
 
+> **Based on the EDA shown below, there does not appear to be pecularities in the data. We might consider removing the names variable for our analysis**
+
 \begin{table}[!htbp] \centering 
   \caption{} 
   \label{} 
@@ -124,7 +126,13 @@ GGally::ggpairs(Auto[,-9])
 
 a) Start with a simple regression of `mpg` vs. `year` and report R's `summary` output. Is `year` a significant variable at the .05 level? State what effect `year` has on `mpg`, if any, according to this model. 
 
-> Comparing mpg and year, we find that year is a significant predictor on mpg according to this model with the p value being <2e-16 ***. According to the estimate of  1.2300, we see that with each incremental increase of year mpg increases by 1.23. 
+> **Comparing mpg and year, we find that year is a significant predictor on mpg according to this model with the p value being <2e-16. According to the estimate of  1.2300, we see that with each incremental increase of year mpg increases by 1.23. **
+
+$$
+
+mpg = year*1.2300 
+
+$$
 
 ```{r}
 summary(time_vs_mpg <- lm(mpg ~ year, data = Auto))
@@ -133,7 +141,13 @@ summary(time_vs_mpg <- lm(mpg ~ year, data = Auto))
 
 b) Add `horsepower` on top of the variable `year` to your linear model. Is `year` still a significant variable at the .05 level? Give a precise interpretation of the `year`'s effect found here. 
 
-> 
+> **Yes. Year is still a significant variable at the .05 level, which also means that when controlling for a cars horsepower, the year the car was made is still a relevant predictor of car mpg. From the output, we find that the beta estimate is 0.65727. This means that for every increase in unit of years, there is an increase of mpg by .65727 (Equation found below). This estimate is lower than what was found in the previous model**
+
+$$
+
+mpg = year*0.65727 + horsepower*(-0.13165)
+
+$$
 
 ```{r}
 summary(horsepower_time_vs_mpg <- lm(mpg ~ year + horsepower, data = Auto))
@@ -142,7 +156,7 @@ summary(horsepower_time_vs_mpg <- lm(mpg ~ year + horsepower, data = Auto))
 
 c) The two 95% CI's for the coefficient of year differ among (i) and (ii). How would you explain the difference to a non-statistician?
 
-> The 95% confidence interval represents that there is a 95% probability that the true linear regression line of a given population lies within this interval. As shown below, we see that the variable year has a different confidence interval across model 1 and model 2. Year in model 2 is much narrower than in model 1. This change is mostly dependent on how strongly correlated the additional variables are with a given outcome variable. Given the narrowing of confidence interval, this signifies that horsepower provides more information about our outcome variable mpg, which makes our model a better fit. 
+> **The 95% confidence interval represents that there is a 95% probability that the true linear regression line of a given population lies within this interval. As shown below, we see that the variable year has a different confidence interval across model 1 and model 2. Year in model 2 is much narrower than in model 1. This change is mostly dependent on how strongly correlated the additional variables are with a given outcome variable. Given the narrowing of confidence interval, this signifies that horsepower provides more information about our outcome variable mpg, which makes our model a better fit. **
 
 ```{r}
 confint(time_vs_mpg)
@@ -152,7 +166,7 @@ confint(horsepower_time_vs_mpg)
 
 d) Create a model with interaction by fitting `lm(mpg ~ year * horsepower)`. Is the interaction effect significant at .05 level? Explain the year effect (if any). 
 
-> An interaction effect offurs when a the effect of one variable on an outcome variable depends on the level of another variable. In this case, we find that year and horsepower have a significant interaction effect, indicating that the effect of year on mpg is stronger for vehicles with less horsepower. This is most likely due to horsepower having higher fuel consumption and thus negatively effects mpg. When looking at year, the later models of cars have better fuel efficiency. Therefore, cars that are newer and have less horsepower have higher mpg, whereas cars that are older and more horsepower have less mpf. 
+> **An interaction effect offurs when a the effect of one variable on an outcome variable depends on the level of another variable. In this case, we find that year and horsepower have a significant interaction effect, indicating that the effect of year on mpg is stronger for vehicles with less horsepower. This is most likely due to horsepower having higher fuel consumption and thus negatively effects mpg. When looking at year, the later models of cars have better fuel efficiency. Therefore, cars that are newer and have less horsepower have higher mpg, whereas cars that are older and more horsepower have less mpg. **
 
 ```{r}
 summary(horsepower_x_time_vs_mpg <- lm(mpg ~ year * horsepower, data =  Auto))
@@ -167,7 +181,7 @@ Remember that the same variable can play different roles! Take a quick look at t
 
 a) Fit a model that treats `cylinders` as a continuous/numeric variable. Is `cylinders` significant at the 0.01 level? What effect does `cylinders` play in this model?
 
-> Given that larger number of cylinders lowers mpg, we expect to see a negative relationship between mpg and cylinders. When adding this to the model, this is exactly what we find. The p value is 5.0e-13 ***, signifying this is a significant relationship and the coefficient is -1.5420. The coefficient indicates that when cylinder increases by a value of 1, mpg decreases by 1.5420. 
+> **Given that larger number of cylinders lowers mpg, we expect to see a negative relationship between mpg and cylinders. When adding this to the model, this is exactly what we find. The p value is 5.0e-13, signifying this is a significant relationship and the coefficient is -1.5420. The coefficient indicates that when cylinder increases by a value of 1, mpg decreases by 1.5420. **
 
 ```{r}
 Auto$cylinders <- as.numeric(Auto$cylinders)
@@ -180,7 +194,7 @@ summary(cylinders.cont_horsepower_x_time_vs_mpg <- lm(mpg ~ year*horsepower + cy
 
 b) Fit a model that treats `cylinders` as a categorical/factor. Is `cylinders` significant at the .01 level? What is the effect of `cylinders` in this model? Describe the `cylinders` effect over `mpg`. 
 
-> By treating culinders as a factor, we find that the only significant effect is between vehicles that have 4 cylinders (p = 0.0044 **). Neither 5,6,8 are not significantly related to mpg. We also find an interesting effect with 4 cylinders and mpg where there is a positive relationship. This suggesting that vehicles with 4 cylinders have a positive effect on mpg. Given that higher cylinders means lower mpg, this makes sense considering that 4 cylinders is the smallest a vehicle in this dataset can have.
+> **By treating culinders as a factor, we find that the only significant effect is between vehicles that have 4 cylinders (p = 0.0044 **). Neither 5,6,8 are not significantly related to mpg. We also find an interesting effect with 4 cylinders and mpg where there is a positive relationship. This suggesting that vehicles with 4 cylinders have a positive effect on mpg. Given that higher cylinders means lower mpg, this makes sense considering that 4 cylinders is the smallest a vehicle in this dataset can have.**
 
 ```{r}
 Auto$cylinders <- as.factor(Auto$cylinders)
@@ -192,11 +206,11 @@ summary(cylinders.fact_horsepower_x_time_vs_mpg <- lm(mpg ~ year*horsepower + cy
 
 c) What are the fundamental differences between treating `cylinders` as a continuous and categorical variable in your models? 
 
-> Making assumptions on variables being continuous and categorical changes how we're able to interpret our results. By treating variables as a continuous variable, we assume that the variable has a linear relationship with an outcome variable and that this relationship is consistent across all levels of a variable. This part can be indicated when there was a negative relationship between cylinders and mpg, where the vehicles with less cylinders have higher mpg. By treating variables as a categorical variable, we assume that the relationship between the variable and an outcome variable is not linear and that it can take different forms at each level of the given variable. This can be seen when we only found a relationship between cylinder 4 and mpg. We are assuming that each cylinder group takes on an individual relationship with mpg. However, as can be seen by b, we didn't find category specific effects. 
+> **Making assumptions on variables being continuous and categorical changes how we're able to interpret our results. By treating variables as a continuous variable, we assume that the variable has a linear relationship with an outcome variable and that this relationship is consistent across all levels of a variable. This part can be indicated when there was a negative relationship between cylinders and mpg, where the vehicles with less cylinders have higher mpg. By treating variables as a categorical variable, we assume that the relationship between the variable and an outcome variable is not linear and that it can take different forms at each level of the given variable. This can be seen when we only found a relationship between cylinder 4 and mpg. We are assuming that each cylinder group takes on an individual relationship with mpg. However, as can be seen by b, we didn't find category specific effects. **
 
 d) Can you test the null hypothesis: fit0: `mpg` is linear in `cylinders` vs. fit1: `mpg` relates to `cylinders` as a categorical variable at .01 level?  
 
-> We do reject the null hypothesis given that the p value is 1.8e-07 ***. This suggests that adding the variable as a categorical variable is able to provide us with more information about the model than the simple linear model created as a continuous variable
+> **We do reject the null hypothesis given that the p value is 1.8e-07. This suggests that adding the variable as a categorical variable is able to provide us with more information about the model than the simple linear model created as a continuous variable**
 
 ```{r}
 anova(cylinders.cont_horsepower_x_time_vs_mpg,cylinders.fact_horsepower_x_time_vs_mpg)
@@ -211,7 +225,7 @@ Final modeling question: we want to explore the effects of each feature as best 
   
 a) Describe the final model. Include diagnostic plots with particular focus on the model residuals and diagnoses.
 
-> To explore the effects of each car feature on mpg, we decided to look at mpg's association with all variables. Before we start our analysis, however, let's clean up our data. First, we used the function ggpairs to look at each association individually (this is shown above). We noticed that horsepower looks exponential. So, we decided to apply some function transformations. We looked at log and taking the inverse of it. Log didn't help, but the inverse did. So we decided to make a new variable called horsepower_new. Next, we looked at a description of our variables to see if they are coded properly. From the previous problem, we decided to keep cylinders as a factor since cylinders isn't quite a continous variable (cylinders_new). Additionally, we decided to apply a factor on origin. Origin represents the location of origin of the car model. 1 means its from America. 2 means its from Europe. 3 means its from Asia. We then analyzed a model with all variables considered and plotted all relationships grouped by cylinders and car origin. Here's what we found: 
+> **To explore the effects of each car feature on mpg, we decided to look at mpg's association with all variables. Before we start our analysis, however, let's clean up our data. First, we used the function ggpairs to look at each association individually (this is shown above). We noticed that horsepower looks exponential. So, we decided to apply some function transformations. We looked at log and taking the inverse of it. Log didn't help, but the inverse did. So we decided to make a new variable called horsepower_new. Next, we looked at a description of our variables to see if they are coded properly. From the previous problem, we decided to keep cylinders as a factor since cylinders isn't quite a continous variable (cylinders_new). Additionally, we decided to apply a factor on origin. Origin represents the location of origin of the car model. 1 means its from America. 2 means its from Europe. 3 means its from Asia. We then analyzed a model with all variables considered and plotted all relationships grouped by cylinders and car origin. Here's what we found: **
 
 - Displacement is not associated with mpg when considering all other variables
 
@@ -335,7 +349,20 @@ summary(Auto.model.revised3 <- lm(mpg~., Auto.data4))
 
 c) Predict the `mpg` of the following car: A red car built in the US in 1983 that is 180 inches long, has eight cylinders, displaces 350 cu. inches, weighs 4000 pounds, and has a horsepower of 260. Also give a 95% CI for your prediction.
 
-
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+Statistic & \multicolumn{1}{c}{N} & \multicolumn{1}{c}{Mean} & \multicolumn{1}{c}{St. Dev.} & \multicolumn{1}{c}{Min} & \multicolumn{1}{c}{Max} \\ 
+\hline \\[-1.8ex] 
+mpg\_newcar\_lowerbound & 1 & 0.270 &  & 0.270 & 0.270 \\ 
+mpg\_newcar & 1 & 22.900 &  & 22.900 & 22.900 \\ 
+mpg\_newcar\_upperbound & 1 & 46.100 &  & 46.100 & 46.100 \\ 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table} 
 
 ```{r}
 newcar = Auto.data4[1, ]
@@ -374,6 +401,8 @@ Final modelling question: We want to explore the effects of each feature as best
 a) You may explore the possibility of variable transformations. We normally do not suggest to transform $x$ for the purpose of interpretation. You may consider to transform $y$ to either correct the violation of the linear model assumptions or if you feel a transformation of $y$ makes more sense from some theory. In this case we suggest you to look into `GPM=1/MPG`. Compare residual plots of MPG or GPM as responses and see which one might yield a more satisfactory patterns. 
 
 In addition, can you provide some background knowledge to support the notion: it makes more sense to model `GPM`?  
+
+> **When it comes to measuring the efficiency of car fuel intake, mpg has been a common metric for measuring this. However, gpm may be a better approach to take given the statisical tools currently under our belt. As shown by the plot below, gpm has a linear relationship amongst the variables, unlike mpg which has a non-linear relationship. Since we are using linear regressions to estimate a cars fuel efficiency, it makes sense to use a variable that is linear. Therefore, for the rest of our analysis, we will be focusing on gpm**
 
 \begin{table}[!htbp] \centering 
   \caption{} 
@@ -450,6 +479,9 @@ Auto <- ISLR::Auto %>% mutate(gpm = 1/mpg) %>% select(-name)
 Auto.mpg <- lm(mpg ~ ., data = Auto[,1:8])
 
 Auto.gpm <- lm(gpm ~ ., data = Auto[,2:9])
+
+GGally::ggpairs(Auto)
+
 
 car::Anova(Auto.mpg)
 
@@ -601,24 +633,26 @@ plot(Auto.final, 2)
 
   * Summarize the effects found.
   
-  > In Part 1.B We explored different interaction terms and observed that our third model appears to show that there are interaction effects between origin and year & acceleration and horsepower. Following this, we attempted to reduce the model since there are a total of 9 variables. To reduce our model, we applied Mallow's $C_p$ to help us select the best model. When taking our model with interaction effects, we found that 8 variables is appropriate for our model. More specifically, we found that the variable displacement can be removed from our final model. Thus, we are using every variable except displacement in our model. Afterwards, we then applied diagnostic plots. Linearity/Homoscedasticity seems to be fine here; however, normality may be a concern
+  > **In Part 1.B We explored different interaction terms and observed that our third model appears to show that there are interaction effects between origin and year & acceleration and horsepower. Following this, we attempted to reduce the model since there are a total of 9 variables. To reduce our model, we applied Mallow's $C_p$ to help us select the best model. When taking our model with interaction effects, we found that 8 variables is appropriate for our model. More specifically, we found that the variable displacement can be removed from our final model. Thus, we are using every variable except displacement in our model. Afterwards, we then applied diagnostic plots. Linearity/Homoscedasticity seems to be fine here; however, normality may be a concern**
   
   * Predict the `mpg` of a car that is: built in 1983, in the US, red, 180 inches long, 8 cylinders, 350 displacement, 260 as horsepower, and weighs 4,000 pounds. Give a 95% CI.
   
-  
-\begin{table}[!htbp] \centering 
+
+  \begin{table}[!htbp] \centering 
   \caption{} 
   \label{} 
-\begin{tabular}{@{\extracolsep{5pt}} cccc} 
+\begin{tabular}{@{\extracolsep{5pt}} ccc} 
 \\[-1.8ex]\hline 
 \hline \\[-1.8ex] 
- & newcar_mpg & upr & lwr \\ 
+lower & mpg & upper \\ 
 \hline \\[-1.8ex] 
-1 & $37$ & $68.1$ & $25.4$ \\ 
+$25.400$ & $37.000$ & $68.100$ \\ 
 \hline \\[-1.8ex] 
 \end{tabular} 
 \end{table} 
-  
+
+
+
 ```{r}
 newcar = Auto[1, ]
 newcar[1] = NA
@@ -641,14 +675,18 @@ newcar_confidence_intervals_mpg <- predict(Auto.final,newcar, interval="confiden
 
 newcar_confidence_intervals_mpg$fit <- 1/newcar_confidence_intervals_gpm$fit # Upper and Lower Need to be swapped
 
+mpg <- newcar_confidence_intervals_mpg$fit[1]
+upper <- newcar_confidence_intervals_mpg$fit[2]
+lower <- newcar_confidence_intervals_mpg$fit[3]
 
+newcar_mpg <- cbind(lower,mpg,upper)
 
 ```
   
   
   * Any suggestions as to how to improve the quality of the study?
   
-  > This study offers a great introduction into multiple linear regressions by showing how varying aspects of a car influence the mileage per gallon. However, there are limitations to this study that could be improved for the future. To start, these cars are from the 1970 - 1982. Cars have changed drastically since then, such as the existance of smart vehicles or new technical improvements (for example, average car horsepower in America is currently 200-250, whereas in this dataset it is 105). Therefore, having a new round of data collection can help us better entangle whether these variables are still important for modern cars. Another addition for this study, could be keeping track of whether a car is an electric car or not. Electric cars have better acceleration and mileage. If we make this modification, then we would also need to collect MPGe which is the mpg equivalent to electric cars. Another change we can make for this study is a comparison of different car companies. There is a list of vehicle names listed under the name variable, however, it would be helpful to just have a variable of what company this car is from. From our analysis, we found that Asian cars were more efficient, but what if this is largely explained by a specific group of car companies that may specialize in more efficient cars. 
+  > **This study offers a great introduction into multiple linear regressions by showing how varying aspects of a car influence the mileage per gallon. However, there are limitations to this study that could be improved for the future. To start, these cars are from the 1970 - 1982. Cars have changed drastically since then, such as the existance of smart vehicles or new technical improvements (for example, average car horsepower in America is currently 200-250, whereas in this dataset it is 105). Therefore, having a new round of data collection can help us better entangle whether these variables are still important for modern cars. Another addition for this study, could be keeping track of whether a car is an electric car or not. Electric cars have better acceleration and mileage. If we make this modification, then we would also need to collect MPGe which is the mpg equivalent to electric cars. Another change we can make for this study is a comparison of different car companies. There is a list of vehicle names listed under the name variable, however, it would be helpful to just have a variable of what company this car is from. From our analysis, we found that Asian cars were more efficient, but what if this is largely explained by a specific group of car companies that may specialize in more efficient cars. **
 
 
 # Case study 2: COVID19
