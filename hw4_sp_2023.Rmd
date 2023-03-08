@@ -1,8 +1,8 @@
 ---
 title: " Modern Data Mining, HW 4"
 author:
-- Group Member 1
-- Group Member 2
+- Group Member Christian Benitez
+- Group Member Taurean Butler
 - Group Member 3
 date: '11:59 pm, 03/19, 2023'
 output:
@@ -29,7 +29,7 @@ urlcolor: blue
 knitr::opts_chunk$set(echo = FALSE, results = "hide", fig.width=8, fig.height=4)
 options(scipen = 0, digits = 3)  # controls base R output
 if(!require('pacman')) {install.packages('pacman')}
-pacman::p_load(bestglm, glmnet, leaps, car, tidyverse, pROC, caret) # add the packages needed
+pacman::p_load(bestglm, glmnet, leaps, car, tidyverse, pROC, caret,kableExtra) # add the packages needed
 ```
 
 \pagebreak
@@ -104,7 +104,7 @@ To keep our answers consistent, use a subset of the data, and exclude anyone wit
 ```{r data preparation, include=F}
 # Notice that we hide the code and the results here
 # Using `include=F` in the chunk declaration. 
-hd_data <- read.csv("Framingham.dat")
+hd_data <- read.csv("~/R_Projects/class-codes/Spring 2023/STAT5710/Homework/HW4/Framingham.dat")
 str(hd_data) 
 
 ### Renames, setting the variables with correct natures...
@@ -148,20 +148,72 @@ Conceptual questions to understand the building blocks of logistic regression. A
 
 i. Take a random subsample of size 5 from `hd_data_f` which only includes `HD` and `SBP`. Also set  `set.seed(471)`. List the five observations neatly below. No code should be shown here.
 
+```{r, echo=F}
+set.seed(471)
+
+hd_data.f %>% select(HD,SBP)%>% sample_n(size = 5,replace = F) %>% kbl(caption = "Sample of 5 Observations of hd_data_f") %>%
+  kable_classic(full_width = T, html_font = "Cambria")
+```
+
+
 ii. Write down the likelihood function using the five observations above.
+
+$$\begin{split}
+\mathcal{L}(\beta_0, \beta_1 \vert {\text Data}) &= {Prob\text {(the outcome of the data)}}\\
+&=Prob((HD=0|SBP=128), (HD=0|SBP=220), (HD=0|SBP=174),Prob(HD=1|SBP=128), Prob(HD=1|SBP=260) \\
+&=Prob((HD=0|SBP=128)\times (HD=0|SBP=220)\times (HD=0|SBP=174)\times Prob(HD=1|SBP=128)\times Prob(HD=1|SBP=260) ) \\
+&= \frac{1}{1+e^{\beta_0 + 128 \beta_1}}\cdot\frac{1}{1+e^{\beta_0 + 220\beta_1}}\cdot\frac{1}{1+e^{\beta_0 + 174\beta_1}}\cdot\frac{e^{\beta_0 + 128 \beta_1}}{1 + e^{\beta_0 + 128 \beta_1}}\cdot\frac{e^{\beta_0 + 260 \beta_1}}{1 + e^{\beta_0 + 260 \beta_1}} 
+	\end{split}$$
+
 
 iii. Find the MLE based on this subset using glm(). Report the estimated logit function of `SBP` and the probability of `HD`=1. Briefly explain how the MLE are obtained based on ii. above.
 
+$$\begin{split} 
+
+logit = -3.65489 + 0.01581*SBP\\
+ \\
+ 
+ \\
+\hat P(HD = 1 \vert SBP) &= \frac{e^{-3.66+0.0159 \times  SBP}}{1+e^{-3.66+0.0159 \times SBP}} \\
+
+	\end{split}$$
+
+**In problem ii, we created a likelihood function using our five observations above. Maxmimum likelihood estimates are obtained when you try to find the \beta_0, \beta_1 that maximize the log of the function above in ii.**
+
+```{r}
+HD.fit.01 <- glm(HD~SBP, data = hd_data.f, family=binomial(logit))
+summary(HD.fit.01)
+```
+
+
 iv. Evaluate the probability of Liz having heart disease. 
+
+**The probability that Liz has a heart disease is .112 or 11.2%**
+
+```{r}
+fit1.predict <- predict(HD.fit.01, hd_data.new, type="response") 
+fit1.predict
+```
+
 
 ### Identify important risk factors for `Heart.Disease.`
 
 We focus on understanding the elements of basic inference method in this part. Let us start a fit with just one factor, `SBP`, and call it `fit1`. We then add one variable to this at a time from among the rest of the variables. For example
 ```{r, results='hide'}
-fit1 <- glm(HD~SBP, hd_data.f, family=binomial)
-summary(fit1)
-fit1.1 <- glm(HD~SBP + AGE, hd_data.f, family=binomial)
-summary(fit1.1)
+summary(fit1 <- glm(HD~SBP, hd_data.f, family=binomial))
+
+summary(fit1.1 <- glm(HD~SBP + AGE, hd_data.f, family=binomial))
+
+summary(fit1.2 <- glm(HD~SBP + AGE + SEX, hd_data.f, family=binomial))
+
+summary(fit1.3 <- glm(HD~SBP + AGE + SEX + DBP, hd_data.f, family=binomial))
+
+summary(fit1.4 <- glm(HD~SBP + AGE + SEX + DBP + CHOL, hd_data.f, family=binomial))
+
+summary(fit1.5 <- glm(HD~SBP + AGE + SEX + DBP + CHOL + FRW, hd_data.f, family=binomial))
+
+summary(fit1.6 <- glm(HD~SBP + AGE + SEX + DBP + CHOL + FRW + CIG, hd_data.f, family=binomial))
+
 # you will need to finish by adding each other variable 
 # fit1.2...
 ```
@@ -169,19 +221,42 @@ summary(fit1.1)
 i. Which single variable would be the most important to add?  Add it to your model, and call the new fit `fit2`.  
 
 We will pick up the variable either with highest $|z|$ value, or smallest $p$ value. Report the summary of your `fit2` Note: One way to keep your output neat, we will suggest you using `xtable`. And here is the summary report looks like.
+
+**We chose the value _SEX_ since it has the smallest p value**
+
+
 ```{r the most important addition, results='asis', comment="   "}
 ## How to control the summary(fit2) output to cut some junk?
 ## We could use packages: xtable or broom. 
 ## Assume the fit2 is obtained by SBP + AGE
 library(xtable)
 options(xtable.comment = FALSE)
-fit2 <- glm(HD~SBP + AGE, hd_data.f, family=binomial)
+fit2 <- glm(HD~SBP + SEX, hd_data.f, family=binomial)
 xtable(fit2)
 ```
 
 ii. Is the residual deviance of `fit2` always smaller than that of `fit1`? Why or why not?
+
+**The residual deviance of fit 2 will be smaller than that of fit1 because we are adding additional parameters into our model. When doing this, our model becomes more flexible and can thus better capture any patterns within the data.**
   
 iii. Perform both the Wald test and the Likelihood ratio tests (Chi-Squared) to see if the added variable is significant at the .01 level.  What are the p-values from each test? Are they the same? 
+
+__The p value for SEX from the Wald Test is 1.0e-10 *** and the Chi-Squared test is 1.48e-22 ***. Though they are smaller than the .01 level, they are not same__
+
+```{r}
+# Wald Test
+summary(fit2)
+confint.default(fit2) 
+Anova(fit2)
+
+# Likelihood Ratio Test
+
+chi.sq <- 1469.3-1373.8
+pvalue <- pchisq(chi.sq, 1, lower.tail=FALSE)
+pvalue
+```
+
+
 
 ###  Model building
 
